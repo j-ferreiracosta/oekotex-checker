@@ -1,0 +1,277 @@
+Follow the RULES to achieve the GOALS.
+
+<GOALS>
+    <INPUT_FORMAT>
+        - A JSON array (table) will be provided.
+        - Each object (row) in the array includes the following columns:
+            • ProductCode
+            • Product
+            • CertificationCode
+            • Scope
+    </INPUT_FORMAT>
+    
+    <EVALUATION_PROCESS>
+        - For each row, determine whether the Product falls within the defined Scope.
+    </EVALUATION_PROCESS>
+    
+    <OUTPUT_REQUIREMENTS>
+        - Add three new columns to each row:
+            • InScope: "YES" if the product falls under the Scope, "NO" otherwise.
+            • Justification: A concise chain-of-thought explanation detailing the decision process.
+            • Confidence: A percentage reflecting the certainty of the determination.
+        - The final response must be a valid JSON array containing the original columns plus the new ones.
+        - Ensure that the entire response is strictly in valid JSON format with no additional text or commentary outside of the JSON structure.
+    </OUTPUT_REQUIREMENTS>
+    
+    <SAMPLE_OUTPUT>
+        [
+            {
+                "CertificationCode": "50.856.874",
+                "Scope": "Yarn made of 100 % cotton (provenance USA) and cotton/elastane in raw white.",
+                "ProductCode": 1,
+                "Product": "Fio Cru Ne 30/2 100% CO CM Compact S F 01000",
+                "InScope": "YES",
+                "Justification": "The product includes 'Fio Cru' indicating raw yarn and is made of 100 cotton, which meets the scope.",
+                "Confidence": "95%"
+            },
+            {
+                "CertificationCode": "50.856.884",
+                "Scope": "Yarn made of 100 % cotton (provenance USA) and cotton/elastane in raw white.",
+                "ProductCode": 1,
+                "Product": "Rama 100% CO Orgânico OCS",
+                "InScope": "NO",
+                "Justification": "'Rama' suggests it's a fiber material and the product's organic designation is not supported by the Scope.",
+                "Confidence": "95%"
+            }
+        ]
+    </SAMPLE_OUTPUT>
+</GOALS>
+
+<RULES>
+    <DICTIONARY_INTERPRETATION>
+        - Use the provided DICTIONARY to interpret abbreviations (e.g., CO, CLY, PES) and product designations.
+        - In case of any ambiguity with abbreviations or descriptive terms, refer to the DICTIONARY.
+    </DICTIONARY_INTERPRETATION>
+    
+    <YARN_TYPE_IDENTIFICATION>
+        <PREFIXES>
+            - "Fio Cru": classify as raw yarn (untreated, not dyed).
+            - "Fio Mescla": classify as mélange yarn (blended fibers, potentially a mix of raw and dyed).
+            - "Fio Tinto": classify as dyed yarn (pre-dyed fibers).
+            - "Rama": classify as material or fibers.
+            - Note: The Scope must explicitly state whether it refers to Yarn or Fibers, as they represent different product types.
+            - Clarification: Even if the base material (e.g., cotton) matches, if the prefix (e.g., "Rama") indicates a fiber material while the Scope emphasizes yarn, then the product is considered out-of-scope unless the Scope explicitly includes fibers.
+        </PREFIXES>
+        <IMPLICIT_IDENTIFICATION>
+            - If none of these explicit prefixes appear, infer the product type using contextual cues (such as color descriptors or additional descriptive terms) and the DICTIONARY.
+        </IMPLICIT_IDENTIFICATION>
+    </YARN_TYPE_IDENTIFICATION>
+    
+    <SCOPE_MATCHING>
+        - Verify that the product composition (as indicated by abbreviations and descriptive terms) matches the requirements stated in the Scope.
+        - Ensure that any additional conditions (e.g., “raw white” or specific fiber blends) are met.
+        - Ignore provenance and origin details.
+        - Ignore brand names (e.g., LENZING).
+        - **Mandatory Organic/Recycled Check:**
+            • If the Product contains any reference to being organic (e.g., "Orgânico", "OCS", "GOTS"), the Scope MUST explicitly include organic attributes. If not, the product is out-of-scope.
+            • Similarly, if the Product includes recycled content, the Scope MUST explicitly mention recycled requirements; otherwise, the product is out-of-scope.
+            • *Example: "Rama 100% CO Orgânico OCS" is out-of-scope if the Scope does not state that it applies to organic materials.*
+    </SCOPE_MATCHING>
+    
+    <AMBIGUITY_HANDLING>
+        - If the product description or composition is ambiguous, note the uncertainty in the Justification.
+        - Adjust the Confidence percentage accordingly (e.g., use a lower confidence, around 50%, for uncertain cases).
+        - Enhanced Justification Requirement: The justification must include specific details on how ambiguous or conflicting attributes (such as organic/recycled indications and prefix implications) influenced the decision.
+    </AMBIGUITY_HANDLING>
+    
+    <CONFIDENCE_SCORING>
+        - Assign high confidence (e.g., 90–100%) when the product composition and type clearly match the Scope.
+        - Use lower confidence (e.g., around 50%) when minor ambiguities or missing explicit prefixes necessitate inference.
+    </CONFIDENCE_SCORING>
+    
+    <ERROR_HANDLING>
+        - In case of missing or unexpected values, note the issue in the Justification and set Confidence to a lower level (e.g., 30–40%).
+        - Ensure that such errors do not prevent generating a valid JSON output.
+    </ERROR_HANDLING>
+
+    <FINAL_VERIFICATION>
+        - Before finalizing the response, re-read the entire output to ensure that all rules (including the mandatory Organic/Recycled check, product type classification, and JSON formatting requirements) have been fully respected.
+        - If any part of the output does not comply with the rules, revise the output until it meets all criteria.
+        - Confirm that the output does not include any extraneous text outside of the JSON structure.
+    </FINAL_VERIFICATION>
+
+</RULES>
+
+<DICTIONARY>
+    [
+        {
+            "term": "Amazonia",
+            "definition": "A fiber or product designation referring to materials sourced from or associated with the Amazon region."
+        },
+        {
+            "term": "PVA",
+            "definition": "Polyvinyl Alcohol; a synthetic polymer used as a sizing agent or adhesive in textile processing."
+        },
+        {
+            "term": "Milkweed Floss Fiber",
+            "definition": "A natural fiber obtained from the milkweed plant, used in specialty yarns or non-woven textiles."
+        },
+        {
+            "term": "CA",
+            "definition": "Canhamo; refers to a natural fiber derived from the hemp plant."
+        },
+        {
+            "term": "Kapok",
+            "definition": "A natural, lightweight fiber harvested from the seed pods of the kapok tree."
+        },
+        {
+            "term": "MPAN",
+            "definition": "MicroAcrilico; a micro version of acrylic fiber characterized by its fine texture."
+        },
+        {
+            "term": "CO",
+            "definition": "Algodão; cotton, a natural fiber obtained from the cotton plant."
+        },
+        {
+            "term": "CV",
+            "definition": "Viscose; a regenerated cellulose fiber produced from natural sources like wood pulp."
+        },
+        {
+            "term": "MPES",
+            "definition": "MicroPolyester; a micro version of polyester fiber, offering a softer hand-feel while maintaining durability."
+        },
+        {
+            "term": "PA",
+            "definition": "Poliamida; polyamide (nylon), known for its strength, elasticity, and abrasion resistance."
+        },
+        {
+            "term": "WA",
+            "definition": "Angora; fiber sourced from Angora rabbits, prized for its exceptional softness and warmth."
+        },
+        {
+            "term": "MicroModal",
+            "definition": "A refined, micro version of Modal fiber derived from beech trees."
+        },
+        {
+            "term": "MCLY",
+            "definition": "Micro Liocel; a micro version of Liocel (lyocell), known for its softness and environmentally friendly production."
+        },
+        {
+            "term": "CMD",
+            "definition": "Modal; a type of rayon produced from beech tree pulp, known for its smooth texture and high absorbency."
+        },
+        {
+            "term": "SE",
+            "definition": "Seda; silk, a natural protein fiber produced by silkworms."
+        },
+        {
+            "term": "WP",
+            "definition": "Alpaca; fiber obtained from alpacas, known for its softness, warmth, and hypoallergenic qualities."
+        },
+        {
+            "term": "LI",
+            "definition": "Linho; linen, a natural fiber made from the flax plant, recognized for its durability and breathability."
+        },
+        {
+            "term": "EL",
+            "definition": "Elastano; elastane, a synthetic fiber renowned for its stretch and recovery properties."
+        },
+        {
+            "term": "MTF",
+            "definition": "Metalico; metallic fiber or yarn, typically involving metal filaments for decorative or reflective effects."
+        },
+        {
+            "term": "AC",
+            "definition": "Acetato; acetate fiber, a semi-synthetic fiber made from cellulose acetate, noted for its silk-like appearance."
+        },
+        {
+            "term": "CUP",
+            "definition": "Cupro; a regenerated cellulose fiber made from cotton linter, recognized for its softness and luxurious feel."
+        },
+        {
+            "term": "Multifibras",
+            "definition": "A blend or composite yarn made from two or more different fibers to achieve a balance of properties."
+        },
+        {
+            "term": "Banana",
+            "definition": "Banana fiber; derived from banana plant pseudo-stems, recognized for its strength, eco-friendliness, and unique texture."
+        },
+        {
+            "term": "WS",
+            "definition": "Caxemira; cashmere, a luxurious natural fiber obtained from cashmere goats."
+        },
+        {
+            "term": "Pineapple",
+            "definition": "Also known as piña fiber; extracted from pineapple leaves, noted for its light weight and eco-friendly properties."
+        },
+        {
+            "term": "AG",
+            "definition": "Alginato; alginate fiber derived from seaweed, used for its unique texture and biodegradability."
+        },
+        {
+            "term": "WM",
+            "definition": "Mohair; a natural fiber obtained from the Angora goat, known for its sheen, luster, and durability."
+        },
+        {
+            "term": "AR",
+            "definition": "Aramida; a class of synthetic fibers known for high strength, heat resistance, and durability (e.g., Kevlar®, Nomex®)."
+        },
+        {
+            "term": "Yak",
+            "definition": "Fiber derived from yaks; valued for its warmth, softness, and natural insulating properties."
+        },
+        {
+            "term": "PES",
+            "definition": "Polyester; a widely used synthetic fiber known for its durability, wrinkle resistance, and versatility."
+        },
+        {
+            "term": "MAC",
+            "definition": "Modacrilica; a synthetic fiber noted for its flame resistance, softness, and ease of care."
+        },
+        {
+            "term": "Nettle",
+            "definition": "Nettle fiber; obtained from the stinging nettle plant, historically used for its strength and durability."
+        },
+        {
+            "term": "PAN",
+            "definition": "Acrilico; acrylic, a synthetic fiber that mimics wool and is valued for its lightweight and warm properties."
+        },
+        {
+            "term": "Paper Fiber",
+            "definition": "Fiber derived from recycled paper or pulp, used in specialized textile applications for unique textures and sustainability."
+        },
+        {
+            "term": "WO",
+            "definition": "La; likely shorthand for wool, a natural fiber obtained from sheep, renowned for its warmth and elasticity."
+        },
+        {
+            "term": "CLY",
+            "definition": "Liocel; a regenerated cellulose fiber. Note: When a product is listed as '100% CLY', it is not considered cotton even if its appearance is similar."
+        },
+        {
+            "term": "Fio Cru",
+            "definition": "Raw yarn; produced from fibers that have not been dyed or treated beyond basic spinning."
+        },
+        {
+            "term": "Fio Mescla",
+            "definition": "Mélange yarn; produced by blending fibers that may be raw and/or dyed, resulting in a variegated or mixed-color effect."
+        },
+        {
+            "term": "Fio Tinto",
+            "definition": "Dyed yarn; produced from fibers that have been pre-dyed before spinning, resulting in a uniform color."
+        },
+        {
+            "term": "GOTS",
+            "definition": "Global Organic Textile Standard; an internationally recognized standard ensuring textiles are made from organically produced fibers."
+        },
+        {
+            "term": "GRS",
+            "definition": "Global Recycled Standard; a standard that verifies the recycled content of a product and ensures strict environmental and social criteria are met."
+        },
+        {
+            "term": "OCS",
+            "definition": "Organic Content Standard; a certification verifying the presence and amount of organic material in a final product."
+        }
+    ]
+</DICTIONARY>
+
